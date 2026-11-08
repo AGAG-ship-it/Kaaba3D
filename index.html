@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Guide 3D de la Omra</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Concept : le Haram de nuit. Cube noir éclairé d'or au centre, panneau latéral sobre comme un carnet de pèlerin. */
+:root{
+  --night:#0c0e13;
+  --panel:#14171d;
+  --panel-2:#1b1f27;
+  --line:#2a2f39;
+  --ink:#ece7db;
+  --muted:#9d9e9a;
+  --gold:#c9a45c;
+  --gold-hi:#e8c984;
+  --good:#4fb27a;
+  --display:'Amiri','Noto Naskh Arabic',Georgia,serif;
+  --body:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+body{
+  background:var(--night);color:var(--ink);font:15px/1.55 var(--body);
+  padding-block:22px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));
+  padding-right:max(16px,env(safe-area-inset-right,0px));
+}
+.wrap{max-width:1280px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 18px}
+h1{font:700 clamp(30px,5vw,44px)/1.05 var(--display);margin:0;text-wrap:balance}
+header .ar{font:400 clamp(24px,4vw,34px)/1 var(--display);color:var(--gold);direction:rtl}
+header p{flex-basis:100%;margin:2px 0 0;color:var(--muted);max-width:68ch}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,a:focus-visible{outline:2px solid var(--gold-hi);outline-offset:2px}
+
+.layout{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:18px;align-items:start}
+.stage{position:relative;border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#0b0d12;height:clamp(440px,76vh,740px)}
+#gl{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+#gl:active{cursor:grabbing}
+.pins{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.pin{position:absolute;left:0;top:0;pointer-events:auto;display:flex;align-items:center;gap:6px;background:rgba(12,14,19,.8);border:1px solid rgba(201,164,92,.55);color:var(--ink);font:500 11.5px/1 var(--body);padding:4px 9px 4px 5px;border-radius:999px;white-space:nowrap;will-change:transform;transition:opacity .2s}
+.pin.l{flex-direction:row-reverse;padding:4px 5px 4px 9px}
+.pin i{width:9px;height:9px;border-radius:50%;background:var(--gold);flex:none}
+.pin.on{background:var(--gold);color:#17120a;border-color:var(--gold-hi)}
+.pin.on i{background:#17120a}
+.pin.dim{opacity:.2;pointer-events:none}
+.compass{position:absolute;top:10px;left:10px;width:46px;height:46px;pointer-events:none}
+.compass .ring{fill:rgba(12,14,19,.7);stroke:var(--line)}
+.compass .nu{fill:var(--gold)}
+.compass .nd{fill:#555a63}
+.hud{position:absolute;top:10px;right:10px;background:rgba(12,14,19,.86);border:1px solid var(--gold);border-radius:10px;padding:8px 12px;font:500 12px/1.35 var(--mono);color:var(--gold-hi);max-width:60%}
+.hud b{display:block;font-size:15px;color:var(--ink)}
+.tools{position:absolute;left:10px;right:10px;bottom:10px;display:flex;flex-wrap:wrap;gap:6px}
+.tool{background:rgba(12,14,19,.86);border:1px solid var(--line);border-radius:8px;padding:6px 11px;font:500 12.5px var(--body)}
+.tool[aria-pressed="true"]{border-color:var(--gold);color:var(--gold-hi)}
+.nogl{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+
+.panel{border:1px solid var(--line);border-radius:14px;background:var(--panel);display:flex;flex-direction:column;min-height:0;height:clamp(440px,76vh,740px);overflow:hidden}
+.tabs{display:flex;border-bottom:1px solid var(--line);flex:none}
+.tab{flex:1;background:none;border:0;border-bottom:2px solid transparent;padding:13px 10px;font:600 13.5px var(--body);color:var(--muted)}
+.tab[aria-selected="true"]{color:var(--gold-hi);border-bottom-color:var(--gold)}
+.pbody{overflow:auto;padding:18px;display:flex;flex-direction:column;gap:18px;min-height:0;flex:1}
+.mono{font:500 11px/1.4 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.detail h2{font:700 28px/1.1 var(--display);margin:4px 0 0;text-wrap:balance}
+.detail .sub{color:var(--muted);margin:2px 0 0}
+.detail .ar{font:400 26px/1.2 var(--display);color:var(--gold);direction:rtl;margin:6px 0 0}
+.detail .where{margin:12px 0 8px}
+.detail p{margin:0 0 10px;max-width:62ch}
+.tip{background:var(--panel-2);border-radius:10px;padding:12px 14px;margin-top:6px}
+.tip p{margin:4px 0 0}
+.list{display:flex;flex-direction:column;gap:14px}
+.grp{display:flex;flex-direction:column;gap:2px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px;background:none;border:0;border-bottom:1px solid var(--line);padding:9px 4px;text-align:left}
+.row:hover{background:var(--panel-2)}
+.row.on{background:var(--panel-2);color:var(--gold-hi)}
+.row .ar{font:400 19px/1 var(--display);color:var(--gold);direction:rtl;flex:none}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.step{border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.step.on{border-color:var(--gold)}
+.step-h{display:flex;gap:12px;align-items:center;width:100%;background:none;border:0;padding:11px 12px;text-align:left}
+.num{flex:none;width:28px;height:28px;border-radius:50%;border:1px solid var(--gold);display:grid;place-items:center;font:500 12px var(--mono);color:var(--gold-hi)}
+.step.on .num{background:var(--gold);color:#17120a}
+.st{display:flex;flex-direction:column;min-width:0}
+.st b{font-weight:600}
+.st small{color:var(--muted);font-size:12.5px}
+.step-b{padding:2px 14px 14px 52px;display:flex;flex-direction:column;gap:10px}
+.step-b ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.verse{background:var(--panel-2);border-radius:10px;padding:10px 12px;font:italic 400 16px/1.45 var(--display)}
+.verse small{display:block;font:400 13px var(--body);font-style:normal;color:var(--muted);margin-top:4px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{background:none;border:1px solid var(--line);border-radius:999px;padding:4px 11px;font-size:12.5px}
+.chip:hover{border-color:var(--gold);color:var(--gold-hi)}
+.act{align-self:flex-start;background:var(--gold);color:#17120a;border:0;border-radius:8px;padding:8px 14px;font-weight:600}
+.sai{background:var(--panel-2);border-radius:10px;padding:10px}
+.sai svg{display:block;width:100%;height:auto}
+.sai .hill{fill:var(--gold)}
+.sai .path{stroke:#555a63;stroke-width:3}
+.sai .green{stroke:var(--good);stroke-width:7;stroke-linecap:round}
+.sai .dot{fill:#fff}
+.sai text{fill:var(--ink);font:500 11px var(--body)}
+.sai .t2{fill:var(--muted);font-size:10px}
+.sai-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:6px}
+.mini{background:none;border:1px solid var(--gold);color:var(--gold-hi);border-radius:8px;padding:5px 12px;font-size:12.5px}
+footer{border-top:1px solid var(--line);padding-top:16px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;color:var(--muted);font-size:13px}
+footer h3{margin:0 0 6px}
+footer ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+footer a{color:var(--gold-hi)}
+footer p{margin:0 0 8px;max-width:62ch}
+
+@media (max-width:960px){
+  .layout{grid-template-columns:minmax(0,1fr)}
+  .stage{height:62vh;min-height:380px}
+  .panel{height:auto;overflow:visible}
+  .pbody{overflow:visible}
+  .pin span{display:none}
+  .pin.on span{display:inline}
+  footer{grid-template-columns:minmax(0,1fr)}
+  .hud{max-width:70%}
+}
+@media (prefers-reduced-motion:reduce){.pin{transition:none}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <h1>La Kaaba en 3D</h1>
+    <span class="ar" lang="ar">الكعبة المشرفة</span>
+    <p>Faites tourner la maquette, touchez un repère pour lire son rôle, puis suivez les sept étapes de la Omra.</p>
+  </header>
+
+  <div class="layout">
+    <div class="stage" id="stage">
+      <canvas id="gl" aria-label="Maquette 3D de la Kaaba et du Mataf"></canvas>
+      <div class="pins" id="pins"></div>
+      <div class="compass" id="compass" title="Nord">
+        <svg viewBox="0 0 46 46" aria-hidden="true"><circle class="ring" cx="23" cy="23" r="21"/><g id="needle"><path class="nu" d="M23 5 L28 23 L23 20 L18 23Z"/><path class="nd" d="M23 41 L28 23 L23 26 L18 23Z"/></g></svg>
+      </div>
+      <div class="hud" id="hud" hidden></div>
+      <div class="tools">
+        <button class="tool" id="bReset" type="button">Vue d’ensemble</button>
+        <button class="tool" id="bTawaf" type="button" aria-pressed="false">Tawaf guidé</button>
+        <button class="tool" id="bCrowd" type="button" aria-pressed="true">Foule</button>
+        <button class="tool" id="bLabels" type="button" aria-pressed="true">Repères</button>
+      </div>
+      <div class="nogl" id="nogl" hidden>Votre navigateur ne peut pas afficher la 3D (WebGL indisponible). Les fiches des lieux et les étapes restent lisibles à droite.</div>
+    </div>
+
+    <section class="panel" aria-label="Informations">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tabP" aria-selected="true" aria-controls="body" type="button">Les lieux</button>
+        <button class="tab" role="tab" id="tabS" aria-selected="false" aria-controls="body" type="button">La Omra en 7 étapes</button>
+      </div>
+      <div class="pbody" id="body" role="tabpanel"></div>
+    </section>
+  </div>
+
+  <footer>
+    <div>
+      <h3>À propos de cette maquette</h3>
+      <p>Modèle 3D original, construit pour ce guide. Les proportions de la Kaaba sont proches de la réalité (environ 13 m de haut, 11 m sur 12,8 m au sol). Le Mataf, Safa et Marwa sont dessinés de façon schématique et ne respectent pas les distances réelles.</p>
+      <p>Les écoles juridiques divergent sur certains points (obligations, détails des gestes). Pour votre cas précis, demandez à un savant ou à votre organisateur de voyage.</p>
+    </div>
+    <div>
+      <h3>Sources</h3>
+      <ul>
+        <li><a href="https://halalbooking.com/fr/omra/comment-faire" target="_blank" rel="noopener">Halal Booking, comment faire la Omra</a></li>
+        <li><a href="https://info.fr/comment-faire-lomra-guide-complet/" target="_blank" rel="noopener">info.fr, guide complet de l’Omra</a></li>
+        <li><a href="https://muslimhands.org.uk/islamic-resources/how-to-perform-umrah-and-hajj-part-one" target="_blank" rel="noopener">Muslim Hands, Umrah and Hajj</a></li>
+        <li><a href="https://makkahlive.net/en/guides/how-to-perform-umrah" target="_blank" rel="noopener">Makkah Live, how to perform Umrah</a></li>
+        <li><a href="https://readingislam.com/blog/how-to-perform-umrah-step-by-step" target="_blank" rel="noopener">Reading Islam, Umrah step by step</a></li>
+        <li><a href="https://www.newmuslim.net/how-to-make-umrah/" target="_blank" rel="noopener">NewMuslim, how to make Umrah</a></li>
+        <li><a href="https://humanappeal.org.uk/news/2026/04/how-to-perform-umrah" target="_blank" rel="noopener">Human Appeal, how to perform Umrah</a></li>
+        <li><a href="https://discovermakkah.sa/en/places-worth-visiting/stories-from-the-heart-of-mecca/first-house-of-worship" target="_blank" rel="noopener">Discover Makkah, la Kaaba</a></li>
+        <li><a href="https://gulfnews.com/world/gulf/saudi/saudi-arabia-a-guide-to-the-kaabas-key-landmarks-for-pilgrims-preparing-for-hajj-1.500106100" target="_blank" rel="noopener">Gulf News, repères de la Kaaba</a></li>
+        <li><a href="https://lifeinsaudiarabia.net/13-sights-of-holy-kaaba-you-should-know/" target="_blank" rel="noopener">Life in Saudi Arabia, les lieux de la Kaaba</a></li>
+      </ul>
+    </div>
+  </footer>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+'use strict';
+var D=Math.PI/180;
+
+/* ---------- Données : lieux ---------- */
+var PLACES=[
+ {id:'aswad',g:0,n:'Hajar al-Aswad',sub:'La Pierre noire',ar:'الحجر الأسود',pin:'Pierre noire',side:'r',pos:[5.75,1.55,6.6],
+  where:'Coin est, à environ 1,5 m du sol',
+  text:['La Pierre noire est enchâssée dans le coin est de la Kaaba. C’est le point où chaque tour de tawaf commence et se termine.','La tradition rapporte que le Prophète ﷺ l’a remise lui-même à sa place après que la pluie a endommagé une partie de la construction.'],
+  tip:'Si la foule empêche de s’approcher, faites un geste de la main en direction de la pierre, sans pousser personne.',
+  view:{az:45,pol:80,r:12}},
+ {id:'yamani',g:0,n:'Rukn al-Yamani',sub:'Le coin yéménite',ar:'الركن اليماني',pin:'Coin yéménite',side:'l',pos:[-5.65,2.2,6.55],
+  where:'Coin sud, juste avant la Pierre noire dans le sens du tawaf',
+  text:['Il porte ce nom parce qu’il fait face au Yémen. On le touche de la main droite, sans l’embrasser.','Entre ce coin et la Pierre noire, on récite le verset 201 de la sourate Al-Baqara : « Notre Seigneur, accorde-nous une belle part ici-bas et une belle part dans l’au-delà, et protège-nous du châtiment du Feu. »'],
+  tip:'Toucher ce coin est une pratique recommandée. Si la foule est dense, passez votre chemin : le tawaf reste valable.',
+  view:{az:315,pol:80,r:12}},
+ {id:'shami',g:0,n:'Rukn ash-Shami',sub:'Le coin levantin (syrien)',ar:'الركن الشامي',pin:'Coin syrien',side:'l',pos:[-5.65,2.2,-6.55],
+  where:'Coin ouest, juste après le Hijr Ismaïl',
+  text:['Il fait face au Levant (le Cham). Dans le tawaf, il vient après le Hijr Ismaïl.','D’après un récit de Boukhari, le Prophète ﷺ n’a touché que les deux coins yéménites, c’est-à-dire la Pierre noire et le coin yéménite. Ce coin n’est donc pas touché.'],
+  tip:'On continue simplement de marcher en direction du coin yéménite.',
+  view:{az:225,pol:80,r:12}},
+ {id:'iraqi',g:0,n:'Rukn al-Iraqi',sub:'Le coin irakien',ar:'الركن العراقي',pin:'Coin irakien',side:'r',pos:[5.65,2.2,-6.55],
+  where:'Coin nord, juste après la porte',
+  text:['Il fait face à l’Irak. Dans le tawaf, il suit la porte et précède le Hijr Ismaïl.','Comme le coin levantin, il n’est pas touché pendant le tawaf.'],
+  tip:'Après ce coin, vous longez le mur du Hijr Ismaïl, à l’extérieur.',
+  view:{az:135,pol:80,r:12}},
+ {id:'door',g:1,n:'Porte de la Kaaba',sub:'Bab al-Kaaba',ar:'باب الكعبة',pin:'Porte',side:'l',pos:[5.65,3.77,3.5],
+  where:'Mur est, surélevée de 2,22 m',
+  text:['La porte est en or pur et s’ouvre du côté est. Elle est placée à 222 cm au-dessus du sol.','Le mur qui la sépare de la Pierre noire est le Multazam.'],
+  tip:'Vous passez devant elle dès le début de chaque tour, juste après la Pierre noire.',
+  view:{az:90,pol:80,r:15}},
+ {id:'multazam',g:1,n:'Al-Multazam',sub:'Le lieu de l’attachement',ar:'الملتزم',pin:'Multazam',side:'r',pos:[5.65,0.55,5.4],
+  where:'Mur est, entre la Pierre noire et la porte, sur environ 2 m',
+  text:['Les fidèles s’y collent pour invoquer Allah, d’où son nom. La tradition en fait un lieu où les invocations sont particulièrement exaucées.'],
+  tip:'Si la foule le permet, on peut y faire une invocation après le tawaf et la prière. Ne bousculez personne pour y accéder.',
+  view:{az:80,pol:78,r:12}},
+ {id:'hijr',g:1,n:'Hijr Ismaïl',sub:'Al-Hatim',ar:'حجر إسماعيل',pin:'Hijr Ismaïl',side:'l',pos:[0,1.3,-11.3],
+  where:'Côté nord, enceinte semi-circulaire en marbre blanc',
+  text:['Ce mur bas en demi-cercle entoure un espace qui faisait partie de la Kaaba d’origine. On en fait le tour par l’extérieur : traverser le Hijr pendant un tour invaliderait le tawaf.','Le Prophète ﷺ a dit de prier dans le Hijr pour qui veut entrer dans la Kaaba, car il en fait partie (Abou Daoud 2028).'],
+  tip:'Priez-y en dehors de vos tours, sans couper le cortège des pèlerins.',
+  view:{az:180,pol:55,r:26,t:[0,1,-8]}},
+ {id:'mizab',g:1,n:'Mizab ar-Rahma',sub:'La gouttière de la miséricorde',ar:'ميزاب الرحمة',pin:'Gouttière dorée',side:'r',pos:[0,13.1,-8],
+  where:'Toit, côté nord',
+  text:['Cette gouttière dorée dépasse du toit. Elle déverse l’eau de pluie et l’eau de lavage du toit dans le Hijr Ismaïl.'],
+  tip:'Levez les yeux en passant devant le Hijr : elle se voit bien depuis le Mataf.',
+  view:{az:170,pol:72,r:20,t:[0,12,-7]}},
+ {id:'kiswa',g:1,n:'La Kiswa',sub:'Le voile de la Kaaba',ar:'الكسوة',pin:'Kiswa',side:'r',pos:[5.65,9.2,-2.2],
+  where:'Recouvre les quatre murs',
+  text:['La Kiswa est un voile de soie noire brodé d’or. Elle est remplacée chaque année.','La large bande dorée dans la partie haute s’appelle le hizam.'],
+  tip:'Sur la maquette, la bande dorée fait le tour des quatre murs.',
+  view:{az:70,pol:76,r:24,t:[5.5,8,0]}},
+ {id:'maqam',g:2,n:'Maqam Ibrahim',sub:'La station d’Ibrahim',ar:'مقام إبراهيم',pin:'Maqam Ibrahim',side:'r',pos:[16.5,2.5,3.5],
+  where:'Face à la porte, à environ 10 m de la Kaaba',
+  text:['Une pierre qui garde, selon la tradition, l’empreinte des pieds d’Ibrahim (Abraham), debout dessus pour élever les parties hautes de la Kaaba. Un petit édicule de verre et de cuivre doré la protège.','Dieu a ordonné d’en faire un lieu de prière (sourate Al-Baqara, verset 125). Après le tawaf, on y prie deux rak’ahs.'],
+  tip:'Au premier rak’ah, Al-Fatiha puis Al-Kafiroun. Au second, Al-Fatiha puis Al-Ikhlas. Si la zone est bondée, priez ailleurs dans la mosquée.',
+  view:{az:90,pol:78,r:13}},
+ {id:'mataf',g:2,n:'Le Mataf',sub:'L’aire du tawaf',ar:'المطاف',pin:'Mataf',side:'r',pos:[17,0.2,-9],
+  where:'Esplanade de marbre autour de la Kaaba',
+  text:['On y tourne autour de la Kaaba en sens antihoraire, la Kaaba toujours à gauche. Un repère au sol, aligné avec la Pierre noire, marque le départ.','Un tour va de la Pierre noire à la Pierre noire. Il en faut sept.'],
+  tip:'Lancez le « Tawaf guidé » en bas de la scène pour suivre un pèlerin pendant les sept tours.',
+  view:{az:40,pol:32,r:70,t:[0,0,0]}},
+ {id:'safa',g:2,n:'As-Safa',sub:'Départ du Sa’i',ar:'الصفا',pin:'Vers Safa',side:'r',pos:[50,0.9,16],
+  where:'Colline au sud-est de la Kaaba (position schématique)',
+  text:['Le Sa’i commence ici. Il rappelle la recherche d’eau de Hajar pour son fils Ismaïl.','En réalité, Safa se trouve à plusieurs dizaines de mètres au-delà du Mataf, au bout du Mas’a. Sur la maquette, la distance est raccourcie.'],
+  tip:'Sur la colline, tournez-vous vers la Kaaba, levez les mains et invoquez.',
+  view:{az:70,pol:55,r:38,t:[34,0,10]}},
+ {id:'marwa',g:2,n:'Al-Marwa',sub:'Arrivée du Sa’i',ar:'المروة',pin:'Vers Marwa',side:'r',pos:[50,0.9,-22],
+  where:'Colline au nord-est de la Kaaba (position schématique)',
+  text:['Le septième trajet se termine ici. Un trajet va d’une colline à l’autre : Safa vers Marwa compte pour un, Marwa vers Safa pour deux.','Comme pour Safa, la distance est raccourcie sur la maquette.'],
+  tip:'Sept trajets en partant de Safa ne peuvent finir qu’à Marwa. Si vous finissez à Safa, votre compte est faux.',
+  view:{az:110,pol:55,r:38,t:[34,0,-14]}}
+];
+var GROUPS=['Les quatre coins','Sur la Kaaba','Autour de la Kaaba'];
+var BYID={};PLACES.forEach(function(p){BYID[p.id]=p;});
+
+/* ---------- Données : étapes ---------- */
+var STEPS=[
+ {t:'Ihram et intention',short:'Avant le Miqat',places:[],view:{az:55,pol:62,r:52,t:[7,4,2]},
+  items:['Faites vos ablutions et mettez l’ihram avant de franchir le Miqat. En avion, enfilez-le avant l’embarquement ou à l’escale.','Vous pouvez prier deux rak’ahs, puis formuler l’intention de la Omra au Miqat. En vol, faites-le au moment où l’avion le survole.','Récitez la Talbiyah souvent, jusqu’au début du tawaf.','Dès l’intention, les interdits de l’ihram s’appliquent jusqu’à la coupe des cheveux.'],
+  verse:{t:'Labbayk Allahumma labbayk, labbayka la sharika laka labbayk. Innal-hamda wan-ni’mata laka wal-mulk, la sharika lak.',s:'Me voici, ô Allah, me voici. Me voici, tu n’as pas d’associé, me voici. La louange, le bienfait et la royauté t’appartiennent. Tu n’as pas d’associé.'}},
+ {t:'Entrée à Masjid al-Haram',short:'Premier regard sur la Kaaba',places:[],view:{az:55,pol:62,r:52,t:[7,4,2]},
+  items:['Entrez dans la mosquée en invoquant Allah et rejoignez le Mataf.','Au premier regard sur la Kaaba, multipliez les invocations. La tradition dit que ce moment est particulièrement favorable.','Continuez la Talbiyah jusqu’à ce que vous commenciez le tawaf.']},
+ {t:'Tawaf, sept tours',short:'Autour de la Kaaba',places:['aswad','yamani','hijr','mataf'],view:{az:40,pol:35,r:62,t:[0,0,0]},act:'tawaf',
+  items:['Placez-vous face à la Pierre noire, intention de tawaf, puis touchez-la, embrassez-la ou faites un geste de la main. Le tour commence ici.','Marchez en sens antihoraire, la Kaaba à votre gauche. Les hommes découvrent l’épaule droite pendant tout le tawaf.','Passez à l’extérieur du Hijr Ismaïl, jamais à travers.','Touchez le coin yéménite si c’est possible. Entre ce coin et la Pierre noire, récitez le verset 201 d’Al-Baqara.','Chaque tour se termine à la Pierre noire. Au septième, le tawaf est fini. Comptez 1 à 2 heures selon l’affluence.']},
+ {t:'Deux rak’ahs au Maqam Ibrahim',short:'Prière après le tawaf',places:['maqam'],view:{az:90,pol:78,r:13,t:[16.5,2.5,3.5]},
+  items:['Recouvrez l’épaule, puis priez deux rak’ahs derrière le Maqam Ibrahim.','Récitez Al-Kafiroun au premier rak’ah et Al-Ikhlas au second, après Al-Fatiha.','S’il y a trop de monde, priez n’importe où dans la mosquée.']},
+ {t:'Zamzam et invocation',short:'Boire l’eau de Zamzam',places:['multazam'],view:{az:80,pol:78,r:12,t:[5.65,1.2,5.4]},
+  items:['Allez à une fontaine de Zamzam. Il y en a dans toute la mosquée.','Buvez debout en demandant à Allah ce que vous souhaitez. Vous pouvez aussi en verser sur votre tête.','Si la foule le permet, vous pouvez invoquer au Multazam avant de partir pour le Sa’i.']},
+ {t:'Sa’i entre Safa et Marwa',short:'Sept trajets',places:['safa','marwa'],view:{az:80,pol:50,r:60,t:[26,0,-2]},act:'sai',
+  items:['Commencez à Safa, finissez à Marwa. Safa vers Marwa compte pour un trajet, Marwa vers Safa pour un autre : au total sept trajets.','Sur chaque colline, tournez-vous vers la Kaaba, levez les mains et invoquez.','Entre les repères lumineux verts, les hommes pressent le pas. Les femmes gardent un pas normal.','Il faut compter de 45 minutes à 1 h 30. Les ablutions ne sont pas exigées pour le Sa’i.']},
+ {t:'Halq ou taqsir',short:'Sortie de l’ihram',places:[],view:{az:55,pol:62,r:52,t:[7,4,2]},
+  items:['Les hommes se rasent la tête (halq, la voie la plus recommandée) ou raccourcissent les cheveux (taqsir).','Les femmes coupent l’équivalent d’un bout de doigt de cheveux.','Une fois les cheveux coupés, les interdits de l’ihram sont levés. La Omra est terminée.','Sans pic d’affluence, l’ensemble prend de 2 à 3 heures. Pendant le Ramadan, le tawaf et le Sa’i peuvent durer bien plus longtemps.']}
+];
+
+/* ---------- Panneau ---------- */
+var body=document.getElementById('body'),tabP=document.getElementById('tabP'),tabS=document.getElementById('tabS');
+var state={tab:'p',place:null,step:0};
+var saiRAF=0;
+
+function esc(s){return s;}
+function introHTML(){
+  return '<div class="detail"><div class="mono">Maquette</div><h2>Repères de la Kaaba</h2>'
+  +'<p class="sub">Un cube de 13 m de haut, voilé de noir et d’or, au centre de l’esplanade du Mataf.</p>'
+  +'<p>Glissez pour tourner, pincez ou utilisez la molette pour zoomer. Touchez une pastille dorée sur la scène, ou une ligne de la liste, pour voir où se trouve le lieu et ce qu’on y fait pendant la Omra.</p></div>';
+}
+function placeHTML(p){
+  var h='<div class="detail"><div class="mono">'+GROUPS[p.g]+'</div><h2>'+p.n+'</h2><p class="sub">'+p.sub+'</p><div class="ar" lang="ar">'+p.ar+'</div>'
+   +'<div class="mono where">'+p.where+'</div>';
+  p.text.forEach(function(t){h+='<p>'+t+'</p>';});
+  h+='<div class="tip"><div class="mono">Pendant la Omra</div><p>'+p.tip+'</p></div></div>';
+  return h;
+}
+function listHTML(){
+  var h='<div class="list">';
+  GROUPS.forEach(function(g,gi){
+    h+='<div class="grp"><div class="mono">'+g+'</div>';
+    PLACES.filter(function(p){return p.g===gi;}).forEach(function(p){
+      h+='<button class="row'+(state.place===p.id?' on':'')+'" data-place="'+p.id+'" type="button"><span>'+p.n+'</span><span class="ar" lang="ar">'+p.ar+'</span></button>';
+    });
+    h+='</div>';
+  });
+  return h+'</div>';
+}
+function stepsHTML(){
+  var h='<ol class="steps">';
+  STEPS.forEach(function(s,i){
+    var on=state.step===i;
+    h+='<li class="step'+(on?' on':'')+'"><button class="step-h" data-step="'+i+'" aria-expanded="'+on+'" type="button"><span class="num">'+(i+1)+'</span><span class="st"><b>'+s.t+'</b><small>'+s.short+'</small></span></button>';
+    if(on){
+      h+='<div class="step-b"><ul>'+s.items.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>';
+      if(s.verse)h+='<div class="verse">'+s.verse.t+'<small>'+s.verse.s+'</small></div>';
+      if(s.act==='tawaf')h+='<button class="act" data-act="tawaf" type="button">Lancer le tawaf guidé</button>';
+      if(s.act==='sai')h+='<div class="sai" id="sai"></div>';
+      if(s.places.length){
+        h+='<div class="chips">'+s.places.map(function(id){return '<button class="chip" data-place="'+id+'" type="button">Voir : '+BYID[id].pin+'</button>';}).join('')+'</div>';
+      }
+      h+='</div>';
+    }
+    h+='</li>';
+  });
+  return h+'</ol>';
+}
+function render(){
+  cancelAnimationFrame(saiRAF);
+  if(state.tab==='p'){
+    var p=state.place?BYID[state.place]:null;
+    body.innerHTML=(p?placeHTML(p):introHTML())+listHTML();
+  }else{
+    body.innerHTML=stepsHTML();
+    if(STEPS[state.step].act==='sai')initSai();
+  }
+  tabP.setAttribute('aria-selected',state.tab==='p');
+  tabS.setAttribute('aria-selected',state.tab==='s');
+  PLACES.forEach(function(q){if(q.el)q.el.classList.toggle('on',state.place===q.id);});
+}
+function selectPlace(id,fly){
+  state.place=id;state.tab='p';render();
+  var p=BYID[id];
+  if(marker){marker.visible=true;marker.position.set(p.pos[0],p.pos[1],p.pos[2]);}
+  if(fly!==false&&sceneOK)flyTo(p.view);
+  if(window.matchMedia('(max-width:960px)').matches){var st=document.getElementById('stage');if(st&&fly!==false){var r=st.getBoundingClientRect();if(r.top<0||r.bottom>window.innerHeight){st.scrollIntoView({block:'start',behavior:'smooth'});}}}
+}
+function selectStep(i){
+  state.step=i;state.tab='s';state.place=null;render();
+  if(marker)marker.visible=false;
+  if(sceneOK)flyTo(STEPS[i].view);
+}
+body.addEventListener('click',function(e){
+  var b=e.target.closest('button');if(!b)return;
+  if(b.dataset.place)selectPlace(b.dataset.place,true);
+  else if(b.dataset.step!==undefined){var i=+b.dataset.step;selectStep(state.step===i?i:i);}
+  else if(b.dataset.act==='tawaf'){startTawaf();}
+});
+tabP.addEventListener('click',function(){state.tab='p';render();});
+tabS.addEventListener('click',function(){state.tab='s';render();});
+
+/* ---------- Simulation du Sa'i ---------- */
+function initSai(){
+  var root=document.getElementById('sai');if(!root)return;
+  root.innerHTML='<svg viewBox="0 0 360 112" role="img" aria-label="Schéma des sept trajets entre Safa et Marwa">'
+   +'<line class="path" x1="40" y1="58" x2="320" y2="58"/>'
+   +'<line class="green" x1="150" y1="58" x2="230" y2="58"/>'
+   +'<circle class="hill" cx="40" cy="58" r="10"/><circle class="hill" cx="320" cy="58" r="10"/>'
+   +'<text x="40" y="84" text-anchor="middle">Safa</text><text x="320" y="84" text-anchor="middle">Marwa</text>'
+   +'<text class="t2" x="190" y="38" text-anchor="middle">repères verts</text>'
+   +'<text class="t2" x="190" y="102" text-anchor="middle">environ 400 m par trajet</text>'
+   +'<circle class="dot" id="saiDot" cx="40" cy="58" r="6"/></svg>'
+   +'<div class="sai-row"><span class="mono" id="saiTxt">Départ à Safa</span><button class="mini" id="saiBtn" type="button">Simuler</button></div>';
+  document.getElementById('saiBtn').addEventListener('click',runSai);
+}
+function runSai(){
+  cancelAnimationFrame(saiRAF);
+  var dot=document.getElementById('saiDot'),txt=document.getElementById('saiTxt'),btn=document.getElementById('saiBtn');
+  if(!dot)return;btn.textContent='Rejouer';
+  var T=2400,N=7,t0=performance.now();
+  function frame(now){
+    var el=now-t0;
+    if(el>=T*N){dot.setAttribute('cx',320);txt.textContent='Terminé à Marwa, 7 trajets';return;}
+    var k=Math.floor(el/T),f=(el%T)/T,e=f<.5?2*f*f:1-Math.pow(-2*f+2,2)/2,fwd=k%2===0;
+    dot.setAttribute('cx',fwd?40+280*e:320-280*e);
+    txt.textContent='Trajet '+(k+1)+' / 7 · '+(fwd?'Safa → Marwa':'Marwa → Safa');
+    saiRAF=requestAnimationFrame(frame);
+  }
+  saiRAF=requestAnimationFrame(frame);
+}
+
+/* ---------- Scène 3D ---------- */
+var sceneOK=false,marker=null,flyTo=function(){},startTawaf=function(){};
+var canvas=document.getElementById('gl'),stage=document.getElementById('stage'),pinsEl=document.getElementById('pins');
+var hud=document.getElementById('hud'),needle=document.getElementById('needle');
+var bTawaf=document.getElementById('bTawaf'),bCrowd=document.getElementById('bCrowd'),bLabels=document.getElementById('bLabels'),bReset=document.getElementById('bReset');
+
+(function build(){
+  if(!window.THREE){document.getElementById('nogl').hidden=false;return;}
+  var renderer;
+  try{renderer=new THREE.WebGLRenderer({canvas:canvas,antialias:true});}catch(err){document.getElementById('nogl').hidden=false;return;}
+  sceneOK=true;
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+  var NIGHT=0x0b0d12;
+  var scene=new THREE.Scene();scene.background=new THREE.Color(NIGHT);scene.fog=new THREE.Fog(NIGHT,95,260);
+  var camera=new THREE.PerspectiveCamera(40,1,0.5,700);
+  var aniso=renderer.capabilities.getMaxAnisotropy?renderer.capabilities.getMaxAnisotropy():1;
+
+  scene.add(new THREE.HemisphereLight(0x8e97bd,0x2b2620,0.75));
+  var sun=new THREE.DirectionalLight(0xffe3b5,0.85);sun.position.set(30,55,25);scene.add(sun);
+  var glow=new THREE.PointLight(0xffc874,0.7,90,1.6);glow.position.set(0,18,0);scene.add(glow);
+
+  /* Étoiles */
+  (function(){
+    var n=420,pos=new Float32Array(n*3);
+    for(var i=0;i<n;i++){var a=Math.random()*Math.PI*2,e=Math.random()*1.2+0.1,r=320;pos[i*3]=Math.cos(a)*Math.cos(e)*r;pos[i*3+1]=Math.sin(e)*r;pos[i*3+2]=Math.sin(a)*Math.cos(e)*r;}
+    var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+    scene.add(new THREE.Points(g,new THREE.PointsMaterial({color:0xcfd6ff,size:1.4,sizeAttenuation:false,fog:false})));
+  })();
+
+  /* Sol : Mataf en marbre */
+  function floorTexture(){
+    var S=2048,R=60,ppm=S/(2*R),c=document.createElement('canvas');c.width=c.height=S;var g=c.getContext('2d');
+    g.save();g.beginPath();g.arc(S/2,S/2,S/2,0,Math.PI*2);g.clip();
+    g.fillStyle='#bab4a6';g.fillRect(0,0,S,S);
+    for(var i=0;i<3500;i++){g.fillStyle='rgba('+(i%2?'255,250,240':'70,62,50')+','+(Math.random()*.05).toFixed(3)+')';var s=Math.random()*14+2;g.fillRect(Math.random()*S,Math.random()*S,s,s);}
+    g.strokeStyle='rgba(60,54,44,.24)';g.lineWidth=1.5;var st=2.4*ppm;
+    for(var x=(S/2)%st;x<S;x+=st){g.beginPath();g.moveTo(x,0);g.lineTo(x,S);g.stroke();g.beginPath();g.moveTo(0,x);g.lineTo(S,x);g.stroke();}
+    g.strokeStyle='rgba(255,248,230,.13)';g.lineWidth=(30-13)*ppm;g.beginPath();g.arc(S/2,S/2,21.5*ppm,0,Math.PI*2);g.stroke();
+    g.setLineDash([14,14]);g.strokeStyle='rgba(120,88,34,.55)';g.lineWidth=3;g.beginPath();g.arc(S/2,S/2,14.8*ppm,0,Math.PI*2);g.stroke();g.setLineDash([]);
+    var ax=S/2+5.5*ppm,ay=S/2+6.4*ppm,d=Math.SQRT1_2;
+    g.strokeStyle='#5e3f1b';g.lineWidth=7;g.beginPath();g.moveTo(ax,ay);g.lineTo(ax+d*(R-7)*ppm*0.9,ay+d*(R-7)*ppm*0.9);g.stroke();
+    g.restore();
+    var t=new THREE.CanvasTexture(c);t.anisotropy=aniso;return t;
+  }
+  var floor=new THREE.Mesh(new THREE.CircleGeometry(60,96),new THREE.MeshStandardMaterial({map:floorTexture(),roughness:.62,metalness:.02}));
+  floor.rotation.x=-Math.PI/2;scene.add(floor);
+  var ground=new THREE.Mesh(new THREE.CircleGeometry(420,64),new THREE.MeshStandardMaterial({color:0x0e1015,roughness:1}));
+  ground.rotation.x=-Math.PI/2;ground.position.y=-0.05;scene.add(ground);
+
+  /* Colonnade périphérique */
+  (function(){
+    var N=96,col=new THREE.InstancedMesh(new THREE.CylinderGeometry(.55,.65,11,10),new THREE.MeshStandardMaterial({color:0xd5cfc1,roughness:.7}),N),m=new THREE.Object3D();
+    for(var i=0;i<N;i++){var a=i/N*Math.PI*2;m.position.set(Math.cos(a)*58,5.5,Math.sin(a)*58);m.updateMatrix();col.setMatrixAt(i,m.matrix);}
+    scene.add(col);
+    var ring=new THREE.Mesh(new THREE.TorusGeometry(58,.7,8,128),new THREE.MeshStandardMaterial({color:0xcfc8b8,roughness:.7}));
+    ring.rotation.x=Math.PI/2;ring.position.y=11.3;scene.add(ring);
+  })();
+
+  /* Kiswa */
+  function kiswaTex(wM,door){
+    var ppm=72,W=Math.round(wM*ppm),H=Math.round(13.1*ppm),c=document.createElement('canvas');c.width=W;c.height=H;var g=c.getContext('2d');
+    var gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'#141414');gr.addColorStop(1,'#060606');g.fillStyle=gr;g.fillRect(0,0,W,H);
+    for(var x=0;x<W;x+=6){g.fillStyle=(x/6)%2?'rgba(255,255,255,.028)':'rgba(0,0,0,.2)';g.fillRect(x,0,3,H);}
+    g.strokeStyle='rgba(255,255,255,.04)';g.lineWidth=1;
+    for(var y=-24;y<H;y+=24){for(var xx=0;xx<W;xx+=24){g.beginPath();g.moveTo(xx+12,y);g.lineTo(xx+24,y+12);g.lineTo(xx+12,y+24);g.lineTo(xx,y+12);g.closePath();g.stroke();}}
+    /* hizam */
+    var y1=H-10.2*ppm,y2=H-8.2*ppm,bg=g.createLinearGradient(0,y1,0,y2);
+    bg.addColorStop(0,'#a8832f');bg.addColorStop(.5,'#e4c479');bg.addColorStop(1,'#a07a28');g.fillStyle=bg;g.fillRect(0,y1,W,y2-y1);
+    g.fillStyle='#0a0a0a';var pw=1.7*ppm,gap=.5*ppm,ph=(y2-y1)-0.34*ppm;
+    for(var px=gap/2;px<W-pw/2;px+=pw+gap){
+      g.fillStyle='#0b0b0b';g.fillRect(px,y1+.17*ppm,pw,ph);
+      g.strokeStyle='#caa24f';g.lineWidth=2;g.strokeRect(px+4,y1+.17*ppm+4,pw-8,ph-8);
+      var cx=px+pw/2,cy=y1+(y2-y1)/2,r=ph*.32;
+      g.strokeStyle='#d9b865';g.lineWidth=2.2;
+      for(var k=0;k<8;k++){var a=k*Math.PI/4;g.beginPath();g.moveTo(cx+Math.cos(a)*r*.35,cy+Math.sin(a)*r*.35);g.lineTo(cx+Math.cos(a)*r,cy+Math.sin(a)*r);g.stroke();}
+      g.beginPath();g.arc(cx,cy,r*.55,0,Math.PI*2);g.stroke();
+    }
+    g.fillStyle='rgba(224,190,110,.9)';g.fillRect(0,y1-3,W,3);g.fillRect(0,y2,W,3);
+    if(door){
+      var dc=(6.4-3.5)*ppm,hw=1.55*ppm,top=H-8.0*ppm,bot=H-0.6*ppm;
+      g.fillStyle='#090909';g.beginPath();g.moveTo(dc-hw,bot);g.lineTo(dc-hw,top+hw);g.arc(dc,top+hw,hw,Math.PI,0);g.lineTo(dc+hw,bot);g.closePath();g.fill();
+      g.strokeStyle='#c9a24f';g.lineWidth=3;g.stroke();
+      g.save();g.clip();g.strokeStyle='rgba(214,176,92,.45)';g.lineWidth=1.2;
+      for(var q=-H;q<W+H;q+=16){g.beginPath();g.moveTo(dc-hw+q%1,top);g.moveTo(dc-hw,top+q);g.lineTo(dc+hw,top+q+2*hw);g.stroke();g.beginPath();g.moveTo(dc+hw,top+q);g.lineTo(dc-hw,top+q+2*hw);g.stroke();}
+      g.restore();
+    }
+    var t=new THREE.CanvasTexture(c);t.anisotropy=aniso;return t;
+  }
+  function kmat(w,door){return new THREE.MeshStandardMaterial({map:kiswaTex(w,door),roughness:.88,metalness:.04});}
+  var roofM=new THREE.MeshStandardMaterial({color:0x1b1b1e,roughness:.9});
+  var kaaba=new THREE.Mesh(new THREE.BoxGeometry(11,13.1,12.8),[kmat(12.8,true),kmat(12.8,false),roofM,roofM,kmat(11,false),kmat(11,false)]);
+  kaaba.position.y=6.55;scene.add(kaaba);
+  var base=new THREE.Mesh(new THREE.BoxGeometry(11.7,.55,13.5),new THREE.MeshStandardMaterial({color:0xc4bdae,roughness:.7}));
+  base.position.y=.275;scene.add(base);
+
+  /* Porte en or */
+  var gold=new THREE.MeshStandardMaterial({color:0xd0a850,metalness:.85,roughness:.32,emissive:0x2a1d05});
+  var door=new THREE.Mesh(new THREE.BoxGeometry(.14,3.1,1.7),gold);door.position.set(5.55,3.77,3.5);scene.add(door);
+
+  /* Pierre noire */
+  (function(){
+    var g=new THREE.Group(),silver=new THREE.MeshStandardMaterial({color:0xc8ccd2,metalness:.9,roughness:.3});
+    var stone=new THREE.Mesh(new THREE.CylinderGeometry(.42,.42,.32,28),new THREE.MeshStandardMaterial({color:0x1c1612,roughness:.5}));stone.rotation.x=Math.PI/2;
+    var ring=new THREE.Mesh(new THREE.TorusGeometry(.55,.085,12,40),silver);
+    stone.scale.set(1,1.35,1);ring.scale.set(1,1.35,1);
+    g.add(stone);g.add(ring);g.position.set(5.5,1.55,6.4);g.rotation.y=Math.PI/4;scene.add(g);
+  })();
+
+  /* Hijr Ismaïl */
+  var hijr;
+  (function(){
+    var Ro=4.8,Ri=3.4,sh=new THREE.Shape();
+    sh.absarc(0,0,Ro,0,Math.PI,false);sh.lineTo(-Ri,0);sh.absarc(0,0,Ri,Math.PI,0,true);sh.closePath();
+    var geo=new THREE.ExtrudeGeometry(sh,{depth:1.3,bevelEnabled:false,curveSegments:40});geo.rotateX(-Math.PI/2);
+    hijr=new THREE.Mesh(geo,new THREE.MeshStandardMaterial({color:0xe9e5db,roughness:.5}));hijr.position.set(0,0,-6.4);scene.add(hijr);
+  })();
+  /* Mizab */
+  (function(){
+    var m=new THREE.Mesh(new THREE.BoxGeometry(.55,.22,1.9),gold);m.position.set(0,13.05,-7.2);m.rotation.x=.12;scene.add(m);
+  })();
+
+  /* Maqam Ibrahim */
+  (function(){
+    var g=new THREE.Group(),ped=new THREE.Mesh(new THREE.BoxGeometry(1.7,.5,1.7),new THREE.MeshStandardMaterial({color:0xcfc8b8,roughness:.6}));ped.position.y=.25;g.add(ped);
+    var glass=new THREE.Mesh(new THREE.BoxGeometry(1.3,1.5,1.3),new THREE.MeshStandardMaterial({color:0x9fb8c2,transparent:true,opacity:.28,roughness:.1,metalness:.1}));glass.position.y=1.25;g.add(glass);
+    var edges=new THREE.LineSegments(new THREE.EdgesGeometry(glass.geometry),new THREE.LineBasicMaterial({color:0xe0b85c}));edges.position.y=1.25;g.add(edges);
+    var roof=new THREE.Mesh(new THREE.ConeGeometry(1.05,.8,4),gold);roof.position.y=2.4;roof.rotation.y=Math.PI/4;g.add(roof);
+    var rock=new THREE.Mesh(new THREE.BoxGeometry(.7,.5,.7),new THREE.MeshStandardMaterial({color:0x3a3228,roughness:.9}));rock.position.y=.85;g.add(rock);
+    g.position.set(16.5,0,3.5);scene.add(g);
+  })();
+
+  /* Foule de pèlerins */
+  var N=240,crowd=new THREE.InstancedMesh(new THREE.CylinderGeometry(.21,.28,1.65,6),new THREE.MeshStandardMaterial({color:0xffffff,roughness:.9}),N);
+  var cd=[],dm=new THREE.Object3D(),cc=new THREE.Color();
+  for(var i=0;i<N;i++){
+    var R=14.2+Math.pow(Math.random(),1.5)*30;cd.push({R:R,phi:Math.random()*Math.PI*2,w:(1.2+Math.random()*.6)/R});
+    cc.setHex(i%9===0?0x2f3340:0xf1ede3);crowd.setColorAt(i,cc);
+  }
+  scene.add(crowd);
+  function placeCrowd(){for(var i=0;i<N;i++){var p=cd[i];dm.position.set(Math.cos(p.phi)*p.R,.83,-Math.sin(p.phi)*p.R);dm.updateMatrix();crowd.setMatrixAt(i,dm.matrix);}crowd.instanceMatrix.needsUpdate=true;}
+  placeCrowd();
+
+  /* Pèlerin guidé */
+  var guide=new THREE.Group();
+  (function(){
+    var m=new THREE.MeshStandardMaterial({color:0xf0c76a,emissive:0x6a4a10,roughness:.5});
+    var b=new THREE.Mesh(new THREE.CylinderGeometry(.3,.4,1.9,10),m);b.position.y=.95;guide.add(b);
+    var h=new THREE.Mesh(new THREE.SphereGeometry(.34,14,12),m);h.position.y=2.15;guide.add(h);
+    guide.visible=false;scene.add(guide);
+  })();
+
+  /* Halo du repère actif */
+  function glowTex(){var c=document.createElement('canvas');c.width=c.height=128;var g=c.getContext('2d'),gr=g.createRadialGradient(64,64,4,64,64,62);gr.addColorStop(0,'rgba(255,224,150,1)');gr.addColorStop(.35,'rgba(232,190,100,.55)');gr.addColorStop(1,'rgba(232,190,100,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return new THREE.CanvasTexture(c);}
+  marker=new THREE.Sprite(new THREE.SpriteMaterial({map:glowTex(),transparent:true,depthTest:false,depthWrite:false}));marker.scale.set(3,3,1);marker.visible=false;marker.renderOrder=10;scene.add(marker);
+
+  /* Pastilles */
+  PLACES.forEach(function(p){
+    p.vec=new THREE.Vector3(p.pos[0],p.pos[1],p.pos[2]);
+    var b=document.createElement('button');b.type='button';b.className='pin'+(p.side==='l'?' l':'');b.innerHTML='<i></i><span>'+p.pin+'</span>';b.title=p.n;
+    b.addEventListener('click',function(ev){ev.stopPropagation();selectPlace(p.id,true);});
+    pinsEl.appendChild(b);p.el=b;
+  });
+  var labelsOn=true,crowdOn=true;
+  bLabels.addEventListener('click',function(){labelsOn=!labelsOn;bLabels.setAttribute('aria-pressed',labelsOn);pinsEl.style.display=labelsOn?'':'none';});
+  bCrowd.addEventListener('click',function(){crowdOn=!crowdOn;bCrowd.setAttribute('aria-pressed',crowdOn);crowd.visible=crowdOn;});
+
+  /* Caméra */
+  var cam={az:55*D,pol:62*D,r:52,t:new THREE.Vector3(7,4,2)};
+  var tw=null;
+  function applyCam(){
+    var s=Math.sin(cam.pol);
+    camera.position.set(cam.t.x+cam.r*s*Math.sin(cam.az),cam.t.y+cam.r*Math.cos(cam.pol),cam.t.z+cam.r*s*Math.cos(cam.az));
+    camera.lookAt(cam.t);
+  }
+  flyTo=function(v){
+    var t=v.t||[v.t0,0,0];
+    var to={az:v.az*D,pol:v.pol*D,r:v.r,t:new THREE.Vector3(t[0],t[1],t[2])};
+    if(!v.t){var p=null;}
+    var da=to.az-cam.az;da=Math.atan2(Math.sin(da),Math.cos(da));to.az=cam.az+da;
+    tw={t0:performance.now(),dur:1100,from:{az:cam.az,pol:cam.pol,r:cam.r,t:cam.t.clone()},to:to};
+  };
+  /* Les repères sans cible propre visent leur position */
+  PLACES.forEach(function(p){if(!p.view.t)p.view.t=p.pos.slice();});
+  bReset.addEventListener('click',function(){stopTawaf();flyTo({az:55,pol:62,r:52,t:[7,4,2]});});
+
+  var ptrs=new Map(),pinch=0;
+  function pd(){var a=Array.from(ptrs.values());return Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);}
+  canvas.addEventListener('pointerdown',function(e){canvas.setPointerCapture(e.pointerId);ptrs.set(e.pointerId,{x:e.clientX,y:e.clientY});tw=null;if(ptrs.size===2)pinch=pd();});
+  canvas.addEventListener('pointermove',function(e){
+    if(!ptrs.has(e.pointerId))return;
+    var o=ptrs.get(e.pointerId),dx=e.clientX-o.x,dy=e.clientY-o.y;o.x=e.clientX;o.y=e.clientY;
+    if(ptrs.size===1){cam.az-=dx*.006;cam.pol=Math.min(1.52,Math.max(.14,cam.pol-dy*.005));}
+    else if(ptrs.size===2){var n=pd();if(pinch>0)cam.r=Math.min(130,Math.max(6,cam.r*pinch/n));pinch=n;}
+  });
+  function up(e){ptrs.delete(e.pointerId);pinch=0;}
+  canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',up);
+  canvas.addEventListener('wheel',function(e){e.preventDefault();tw=null;cam.r=Math.min(130,Math.max(6,cam.r*Math.exp(e.deltaY*.0012)));},{passive:false});
+
+  /* Tawaf guidé */
+  var T={on:false,phi:0,phi0:Math.atan2(-6.4,5.5),W:.6};
+  function stopTawaf(){T.on=false;guide.visible=false;hud.hidden=true;bTawaf.setAttribute('aria-pressed','false');}
+  startTawaf=function(){
+    T.on=true;T.phi=T.phi0;guide.visible=true;hud.hidden=false;bTawaf.setAttribute('aria-pressed','true');
+    hud.innerHTML='<b>Tour 1 / 7</b>Départ à la Pierre noire, sens antihoraire';
+    flyTo({az:40,pol:38,r:60,t:[0,0,0]});
+  };
+  bTawaf.addEventListener('click',function(){if(T.on)stopTawaf();else startTawaf();});
+
+  /* Taille */
+  function resize(){var w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
+  if(window.ResizeObserver)new ResizeObserver(resize).observe(stage);else window.addEventListener('resize',resize);
+  resize();
+
+  /* Boucle */
+  var ray=new THREE.Raycaster(),occ=[kaaba,hijr],v=new THREE.Vector3(),dir=new THREE.Vector3(),last=performance.now();
+  function frame(now){
+    requestAnimationFrame(frame);
+    if(document.hidden){last=now;return;}
+    var dt=Math.min(.05,(now-last)/1000);last=now;
+    if(tw){var k=Math.min(1,(now-tw.t0)/tw.dur),e=k<.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;
+      cam.az=tw.from.az+(tw.to.az-tw.from.az)*e;cam.pol=tw.from.pol+(tw.to.pol-tw.from.pol)*e;cam.r=tw.from.r+(tw.to.r-tw.from.r)*e;cam.t.lerpVectors(tw.from.t,tw.to.t,e);
+      if(k>=1)tw=null;}
+    applyCam();
+    if(crowdOn){for(var i=0;i<N;i++){cd[i].phi+=cd[i].w*dt*1.6;}placeCrowd();}
+    if(T.on){
+      T.phi+=T.W*dt;guide.position.set(14.8*Math.cos(T.phi),0,-14.8*Math.sin(T.phi));
+      var done=(T.phi-T.phi0)/(Math.PI*2);
+      if(done>=7){stopTawaf();selectStep(3);}
+      else hud.innerHTML='<b>Tour '+(Math.floor(done)+1)+' / 7</b>'+(done<.02?'Départ à la Pierre noire, sens antihoraire':'La Kaaba reste à votre gauche');
+    }
+    if(marker.visible){var s=3+Math.sin(now*.004)*.5;marker.scale.set(s,s,1);}
+    needle.setAttribute('transform','rotate('+(cam.az/D).toFixed(1)+' 23 23)');
+    var w=stage.clientWidth,h=stage.clientHeight;
+    PLACES.forEach(function(p){
+      v.copy(p.vec).project(camera);
+      var off=v.z>1||v.x<-1.1||v.x>1.1||v.y<-1.1||v.y>1.1;
+      if(off){p.el.style.display='none';return;}
+      p.el.style.display='';
+      var x=(v.x*.5+.5)*w,y=(-v.y*.5+.5)*h;
+      p.el.style.transform='translate('+x.toFixed(1)+'px,'+y.toFixed(1)+'px) '+(p.side==='l'?'translate(calc(-100% + 9px),-50%)':'translate(-9px,-50%)');
+      dir.copy(p.vec).sub(camera.position);var dist=dir.length();dir.normalize();ray.set(camera.position,dir);ray.far=Math.max(0,dist-.45);
+      p.el.classList.toggle('dim',ray.intersectObjects(occ,false).length>0);
+    });
+    renderer.render(scene,camera);
+  }
+  applyCam();requestAnimationFrame(frame);
+})();
+
+render();
+})();
+</script>
+
+</body>
+</html>
